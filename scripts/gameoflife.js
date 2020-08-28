@@ -11,22 +11,8 @@ const options = {
 	},
 };
 
-/**
- * Main variable for interval
- */
 let interval;
-
 let frequency = 50;
-
-let canvas = new Canvas();
-
-/**
- * Function that runs as interval
- * The main function where all the required parts are called
- */
-function update() {
-	canvas.clear();
-}
 
 /**
  * @constructor
@@ -49,34 +35,27 @@ function Canvas() {
 	this.ctx = null;
 
 	this.start = function () {
-		/**
-		 * Build the canvas
-		 */
 		this.createCanvas();
-		/**
-		 * Start the interval
-		 */
-		interval = setInterval(update, frequency);
+		setInterval(update, frequency);
 	};
 
 	this.createCanvas = function () {
 		this.canvas.attr('height', this.height);
 		this.canvas.attr('width', this.width);
 		this.ctx = this.canvas[0].getContext('2d');
-		/**
-		 * Appends the canvas
-		 */
+
 		$(options.wrapperSelector).append(this.canvas);
 	};
+}
 
-	/**
-	 * Draws rectangle all over the whole canvas
-	 * Clears all existing cells
-	 */
-	this.clear = function () {
-		this.ctx.fillStyle = "rgb(" + this.background.R + "," + this.background.G + "," + this.background.B + ")";
-		this.ctx.fillRect(0, 0, this.width, this.height);
-	};
+let canvas = new Canvas();
+
+/**
+ * Function that runs as interval
+ * The main function where all the required parts are called
+ */
+function update() {
+	//
 }
 
 canvas.start();
