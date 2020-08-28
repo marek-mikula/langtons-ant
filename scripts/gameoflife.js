@@ -80,6 +80,10 @@ function Canvas() {
 		}
 	}
 
+	this.getCellState = function (x, y) {
+		return this.grid[x][y].state;
+	}
+
 	this.changeCellState = function(x,y, state) {
 		this.grid[x][y].changeState(state);
 	}
@@ -98,6 +102,51 @@ function Ant() {
 
 	this.move = function() {
 
+	}
+
+	this.turnClockwise = function() {
+		if (this.direction === DIR_LEFT) {
+			this.direction = DIR_LEFT;
+		} else {
+			this.direction -= 1;
+		}
+	}
+
+	this.turnCounterClockwise = function() {
+		if (this.direction === DIR_UP) {
+			this.direction = DIR_UP;
+		} else {
+			this.direction += 1;
+		}
+	}
+
+	this.moveForward = function() {
+		switch (this.direction) {
+			case DIR_UP:
+				this.y -= 1;
+				break;
+			case DIR_RIGHT:
+				this.x += 1;
+				break;
+			case DIR_DOWN:
+				this.y += 1;
+				break;
+			case DIR_LEFT:
+				this.x -= 1;
+				break;
+		}
+	}
+
+	this.checkOverflow = function() {
+		if(this.x < 1) {
+			this.x = canvas.width;
+		} else if (this.x > canvas.width) {
+			this.x = 1;
+		} else if (this.y < 1) {
+			this.y = canvas.height;
+		} else if (this.y > canvas.height) {
+			this.y = 1;
+		}
 	}
 }
 
