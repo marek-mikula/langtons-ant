@@ -1,12 +1,12 @@
 const options = {
 	wrapperSelector: '#ant',
 	canvas: {
-		height: 1000,
-		width: 1000,
+		height: 800,
+		width: 800,
 		background: {
-			R: 255,
-			G: 255,
-			B: 255,
+			R: 240,
+			G: 240,
+			B: 240,
 		},
 	},
 };
