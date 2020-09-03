@@ -1,184 +1,212 @@
+class Helper {
+	randomElementFromArr(array) {
+		return array[Math.floor(Math.random() * array.length)];
+	}
+	randomInt(min, max) {
+		return Math.floor(Math.random() * (max - min + 1)) + min;
+	}
+}
+
+let helper = new Helper();
+
 const options = {
+	frequency: 50,
 	wrapperSelector: '#ant',
 	canvas: {
-		height: 800,
-		width: 800,
+		height: 250,
+		width: 250,
 		background: {
 			R: 240,
 			G: 240,
 			B: 240,
 		},
 	},
+	spot: {
+		width: 2,
+		height: 2,
+	}
 };
 
-let frequency = 50;
+const STATE_WHITE = 1;
+const STATE_BLACK = 2;
 
-const STATE_WHITE = 0;
-const STATE_BLACK = 1;
+const DIRECTION_TOP = 0;
+const DIRECTION_RIGHT = 1;
+const DIRECTION_DOWN = 2;
+const DIRECTION_LEFT = 3;
 
-const DIR_UP = 1;
-const DIR_RIGHT = 2;
-const DIR_DOWN = 3;
-const DIR_LEFT = 4;
+class Spot {
+	#x = null;
+	#y = null;
+	#width = options.spot.width;
+	#height = options.spot.height;
+	#state = STATE_WHITE;
 
-function Cell(x, y) {
-	this.x = x;
-	this.y = y;
-	this.state = STATE_WHITE;
-	this.changeState = function(state) {
-		this.state = state;
+	constructor(x, y) {
+		this.#x = x;
+		this.#y = y;
+	}
+	changeState() {
+		this.#state = this.#state === STATE_BLACK ? STATE_WHITE : STATE_BLACK;
+	}
+	draw() {
+		let ctx = canvas.getCtx();
+		ctx.fillStyle = this.getBackground();
+		ctx.fillRect(this.#x, this.#y, this.#width, this.#height);
+	}
+	getBackground() {
+		return this.#state === STATE_WHITE ? 'white' : 'black';
 	}
 }
 
-/**
- * @constructor
- */
-function Canvas() {
+class Canvas {
 	/**
 	 * Main selector of canvas
 	 */
-	this.canvas = $('<canvas></canvas>');
+	#canvas = $('<canvas></canvas>');
 
-	this.background = {
-		R: options.canvas.background.R,
-		G: options.canvas.background.G,
-		B: options.canvas.background.B,
-	};
+	#ctx = null;
 
-	this.height = options.canvas.height;
-	this.width = options.canvas.width;
+	#height = (options.canvas.height * options.spot.height);
+	#width = (options.canvas.width * options.spot.width);
 
 	/**
 	 * Grid of cells
-	 * @type {*[]}
+	 * @type {Array}
 	 */
-	this.grid = [];
+	#grid = [];
 
-	this.ctx = null;
-
-	this.start = function () {
+	constructor() {
+		this.initGrid()
+	}
+	/**
+	 * @param {Number} height
+	 */
+	setCanvasHeight(height) {
+		this.#canvas.attr('height', height);
+	}
+	/**
+	 * @param {Number} width
+	 */
+	setCanvasWidth(width) {
+		this.#canvas.attr('width', width);
+	}
+	/**
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @returns Spot
+	 */
+	getSpot(x, y) {
+		return this.#grid[x][y];
+	}
+	/**
+	 * @param {Number} x
+	 * @param {Number} y
+	 * @param {Spot} spot
+	 */
+	setSpot(x, y, spot) {
+		this.#grid[x][y] = spot;
+	}
+	getCtx() {
+		return this.#ctx;
+	}
+	setCtx(ctx) {
+		this.#ctx = ctx;
+	}
+	start() {
 		this.createCanvas();
-		this.initGrid();
-		setInterval(update, frequency);
+		this.drawGrid();
+		// setInterval(update, options.frequency);
 	};
-
-	this.createCanvas = function () {
-		this.canvas.attr('height', this.height);
-		this.canvas.attr('width', this.width);
-		this.ctx = this.canvas[0].getContext('2d');
-
-		$(options.wrapperSelector).append(this.canvas);
-	};
-
-	this.initGrid = function () {
-		for (let x = 1; x <= this.width; x++) {
-			this.grid[x] = [];
-
-			for (let y = 1; y <= this.height; y++) {
-				this.grid[x][y] = new Cell(x, y);
+	/**
+	 * Fills the grid with spots
+	 */
+	initGrid() {
+		for (let x = 1; x <= this.#width; x++) {
+			this.#grid[x] = [];
+			for (let y = 1; y <= this.#height; y++) {
+				this.setSpot(x, y, new Spot(x, y))
 			}
 		}
 	}
-
-	this.getCellState = function (x, y) {
-		return this.grid[x][y].state;
+	drawGrid() {
+		for (let x = 1; x <= this.#width; x++) {
+			for (let y = 1; y <= this.#height; y++) {
+				this.getSpot(x,y).draw();
+			}
+		}
 	}
-
-	this.changeCellState = function(x,y, state) {
-		this.grid[x][y].changeState(state);
+	createCanvas() {
+		this.setCanvasHeight(this.#height);
+		this.setCanvasWidth(this.#width);
+		this.setCtx(this.#canvas[0].getContext('2d'));
+		$(options.wrapperSelector).append(this.#canvas);
 	}
 }
 
-function Ant() {
-	this.x = randomInt(1, canvas.width); // start on random place of X
-	this.y = randomInt(1, canvas.height); // start on random place of Y
-
-	this.direction = randomElementFromArr([
-		DIR_UP,
-		DIR_RIGHT,
-		DIR_DOWN,
-		DIR_LEFT
+class Ant {
+	#x;
+	#y;
+	#current;
+	#direction = helper.randomElementFromArr([
+		DIRECTION_TOP,
+		DIRECTION_RIGHT,
+		DIRECTION_DOWN,
+		DIRECTION_LEFT
 	]);
 
-	this.move = function() {
-
+	/**
+	 * @param {Number} x
+	 * @param {Number} y
+	 */
+	constructor(x, y) {
+		this.#x = x;
+		this.#y = y;
+		this.#current = canvas.getSpot(x, y);
 	}
-
-	this.turnClockwise = function() {
-		if (this.direction === DIR_LEFT) {
-			this.direction = DIR_LEFT;
-		} else {
-			this.direction -= 1;
+	checkDirection() {
+		if (this.#direction > DIRECTION_LEFT) {
+			this.#direction = DIRECTION_TOP;
+		}
+		if (this.#direction < DIRECTION_TOP) {
+			this.#direction = DIRECTION_LEFT;
 		}
 	}
-
-	this.turnCounterClockwise = function() {
-		if (this.direction === DIR_UP) {
-			this.direction = DIR_UP;
-		} else {
-			this.direction += 1;
+	checkStep() {
+		if (this.#y < 0) {
+			this.#y = options.canvas.height;
+		}
+		if (this.#y > options.canvas.height) {
+			this.#y = 0;
+		}
+		if (this.#x < 0) {
+			this.#x = options.canvas.width;
+		}
+		if (this.#x > options.canvas.width) {
+			this.#x = 0;
 		}
 	}
-
-	this.moveForward = function() {
-		switch (this.direction) {
-			case DIR_UP:
-				this.y -= 1;
-				break;
-			case DIR_RIGHT:
-				this.x += 1;
-				break;
-			case DIR_DOWN:
-				this.y += 1;
-				break;
-			case DIR_LEFT:
-				this.x -= 1;
-				break;
-		}
-	}
-
-	this.checkOverflow = function() {
-		if(this.x < 1) {
-			this.x = canvas.width;
-		} else if (this.x > canvas.width) {
-			this.x = 1;
-		} else if (this.y < 1) {
-			this.y = canvas.height;
-		} else if (this.y > canvas.height) {
-			this.y = 1;
-		}
+	draw() {
+		let ctx = canvas.getCtx();
+		ctx.fillStyle = 'red';
+		ctx.fillRect(this.#x, this.#y, options.spot.width, options.spot.height);
 	}
 }
 
 let canvas = new Canvas();
-let ant = new Ant();
+
+let ant = new Ant(
+	helper.randomInt(0, options.canvas.width),
+	helper.randomInt(0, options.canvas.height)
+);
 
 canvas.start();
-
-/**
- * Generates a new random integer
- * @param min
- * @param max
- * @returns {*}
- */
-function randomInt(min, max) {
-	return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/**
- * Gets random element from array
- * @param array
- * @returns {*}
- */
-function randomElementFromArr(array)
-{
-	return array[Math.floor(Math.random() * array.length)];
-}
+ant.draw();
 
 /**
  * Function that runs as interval
  * The main function where all the required parts are called
  */
 function update() {
-	ant.move();
+
 }
