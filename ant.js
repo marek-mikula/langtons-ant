@@ -12,10 +12,9 @@ let helper = new Helper();
 
 const options = {
 	frequency: 5, // in milliseconds
-	wrapperSelector: '#ant',
 	canvas: {
-		height: 200,
-		width: 200,
+		height: 250,
+		width: 250,
 	},
 	spot: {
 		width: 3,
@@ -69,11 +68,11 @@ class Spot {
 
 class Canvas {
 	/**
-	 * Main selector of canvas
+	 * Main canvas
 	 */
-	#canvas = $('<canvas></canvas>');
+	#canvas = document.getElementById("ant-canvas");
 
-	#ctx = null;
+	#ctx = this.#canvas.getContext('2d');
 
 	#height = (options.canvas.height * options.spot.height);
 	#width = (options.canvas.width * options.spot.width);
@@ -94,14 +93,14 @@ class Canvas {
 	 * @param {Number} height
 	 */
 	setCanvasHeight(height) {
-		this.#canvas.attr('height', height);
+		this.#canvas.setAttribute('height', height);
 	}
 
 	/**
 	 * @param {Number} width
 	 */
 	setCanvasWidth(width) {
-		this.#canvas.attr('width', width);
+		this.#canvas.setAttribute('width', width);
 	}
 
 	/**
@@ -126,10 +125,10 @@ class Canvas {
 		return this.#ctx;
 	}
 
-	setCtx(ctx) {
-		this.#ctx = ctx;
-	}
-
+	/**
+	 * Switches the interval meaning
+	 * it either stops or releases the interval
+	 */
 	switchInterval() {
 		if (this.#interval === null) {
 			this.startInterval();
@@ -148,7 +147,7 @@ class Canvas {
 	}
 
 	start() {
-		this.createCanvas();
+		this.prepareCanvas();
 		this.drawGrid();
 		this.startInterval();
 	};
@@ -165,6 +164,9 @@ class Canvas {
 		}
 	}
 
+	/**
+	 * Draws the grid
+	 */
 	drawGrid() {
 		for (let x = 1; x <= this.#width; x++) {
 			for (let y = 1; y <= this.#height; y++) {
@@ -173,11 +175,9 @@ class Canvas {
 		}
 	}
 
-	createCanvas() {
+	prepareCanvas() {
 		this.setCanvasHeight(this.#height);
 		this.setCanvasWidth(this.#width);
-		this.setCtx(this.#canvas[0].getContext('2d'));
-		$(options.wrapperSelector).append(this.#canvas);
 	}
 }
 
@@ -228,6 +228,11 @@ class Ant {
 		this.checkDirection();
 	}
 
+	/**
+	 * Checks the direction if we did not spin out
+	 * of our bounds meaning that the direction does
+	 * not match with any of our constants
+	 */
 	checkDirection() {
 		if (this.#direction > DIRECTION_LEFT) {
 			this.#direction = DIRECTION_TOP;
@@ -237,6 +242,9 @@ class Ant {
 		}
 	}
 
+	/**
+	 * Do one step further by current direction
+	 */
 	step() {
 		switch (this.#direction) {
 			case DIRECTION_TOP:
@@ -255,6 +263,13 @@ class Ant {
 		this.checkStep();
 	}
 
+	/**
+	 * Checks the step if we didn't go out of
+	 * the bounds of the canvas
+	 *
+	 * Lets the ant disappear on one side and
+	 * appear on the other side
+	 */
 	checkStep() {
 		if (this.#y === 0) {
 			this.#y = options.canvas.height;
@@ -270,6 +285,9 @@ class Ant {
 		}
 	}
 
+	/**
+	 * Draws the ant with red color
+	 */
 	draw() {
 		let ctx = canvas.getCtx();
 		ctx.fillStyle = 'red';
@@ -289,8 +307,7 @@ let ant = new Ant(
 	helper.randomInt(1, options.canvas.height)
 );
 
-canvas.start();
-ant.draw();
+canvas.start(); // Start the main loop!
 
 /**
  * Function that runs as interval
@@ -303,8 +320,11 @@ function update() {
 	}
 }
 
-$(document).keydown(function (e) {
-	if (e.which === 32) {
+/**
+ * Set keydown event so user can stop the interval with space
+ */
+document.addEventListener("keydown", function (event) {
+	if (event.which === 32) {
 		canvas.switchInterval();
 	}
-})
+});
